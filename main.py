@@ -13,6 +13,7 @@ DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/
 
 # 共通の除外キーワード（ノイズ対策）
 COMMON_EXCLUDES = "-当たりますように -応募 -抽選 -懸賞bot -RT"
+COMMON_HITS = "(当選 OR 当たり OR 当たった)"
 
 # 監視したい「商品（キャンペーン）リスト」
 # 各商品ごとに個別の判定パラメータを設定可能
@@ -20,32 +21,32 @@ TARGET_PRODUCTS = [
     {
         "id": "asahi_superdry",
         "name": "一番搾り 10.13",
-        "keywords": f'(一番搾り) (当選 OR 当たり OR 当たった) {COMMON_EXCLUDES}',
-        "min_count": 5,           # 最低発火件数
+        "keywords": f'(一番搾り) {COMMON_HITS} {COMMON_EXCLUDES}',
+        "min_count": 3,           # 最低発火件数
         "threshold_multiplier": 2.0, # 平均の何倍でフィーバーとするか
         "cooldown_minutes": 60     # 通知後のクールダウン時間（分）
     },
     {
         "id": "suntory_premal",
         "name": "金麦　11.4 10.27",
-        "keywords": f'(金麦) (当選 OR 当たり OR 当たった) {COMMON_EXCLUDES}',
-        "min_count": 5,
+        "keywords": f'(金麦) {COMMON_HITS} {COMMON_EXCLUDES}',
+        "min_count": 3,
         "threshold_multiplier": 2.0,
         "cooldown_minutes": 60
     },
     {
         "id": "suntory_premal",
         "name": "グッドエール　10.12",
-        "keywords": f'(グッドエール) (当選 OR 当たり OR 当たった) {COMMON_EXCLUDES}',
-        "min_count": 5,
+        "keywords": f'(グッドエール) {COMMON_HITS} {COMMON_EXCLUDES}',
+        "min_count": 3,
         "threshold_multiplier": 2.0,
         "cooldown_minutes": 60
     },
     {
         "id": "sapporo_blacklabel",
         "name": "晴風　10.12",
-        "keywords": f'(晴れ風) (当選 OR 当たり OR 当たった) {COMMON_EXCLUDES}',
-        "min_count": 4,
+        "keywords": f'(晴れ風) {COMMON_HITS} {COMMON_EXCLUDES}',
+        "min_count": 3,
         "threshold_multiplier": 2.0,
         "cooldown_minutes": 60
     }
@@ -58,9 +59,25 @@ CACHE_FILE = "fever_state.json"
 # ==========================================
 # 2. Yahoo!リアルタイム検索からのデータ取得
 # ==========================================
-def get_yahoo_realtime_count(query: str) -> int:
+def get_yahoo_realtime_count(query: str, time_window_minutes: int = 20) -> int:
+    """
+    指定した直近 N分間（デフォルト20分）に絞り込んで投稿数をカウントする
+    """
+    now = int(time.time())
+    since = now - (time_window_minutes * 60)
+    until = now
+
     encoded_query = urllib.parse.quote(query)
-    url = f"https://search.yahoo.co.jp/realtime/search?p={encoded_query}"
+    
+    # since / until / gm=h / samplingRate=100 パラメータを動的に付与
+    url = (
+        f"https://search.yahoo.co.jp/realtime/search"
+        f"?p={encoded_query}"
+        f"&since={since}"
+        f"&until={until}"
+        f"&gm=h"
+        f"&samplingRate=100"
+    )
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -71,10 +88,13 @@ def get_yahoo_realtime_count(query: str) -> int:
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # 投稿要素を取得
         posts = soup.find_all('section', class_=lambda c: c and 'Tweet' in c or 'Post' in c)
         if not posts:
             posts = soup.select("div[class*='Tweet']", "div[class*='Post']")
             
+        print(f"[{time.strftime('%H:%M:%S')}] 直近{time_window_minutes}分間の指定件数: {len(posts)}件")
         return len(posts)
 
     except Exception as e:
