@@ -64,7 +64,7 @@ def get_yahoo_realtime_count(query: str, time_window_minutes: int = 20) -> int:
     指定した直近 N分間（デフォルト20分）に絞り込んで投稿数をカウントする
     """
     now = int(time.time())
-    since = now - (time_window_minutes * 20)
+    since = now - (time_window_minutes * 60)
     until = now
 
     encoded_query = urllib.parse.quote(query)
