@@ -18,14 +18,14 @@ COMMON_HITS = "(当選 OR 当たり OR 当たった)"
 # 監視したい「商品（キャンペーン）リスト」
 # 各商品ごとに個別の判定パラメータを設定可能
 TARGET_PRODUCTS = [
-#    {
-#        "id": "asahi_superdry",
-#        "name": "一番搾り 10.13",
-#        "keywords": f'(一番搾り) {COMMON_HITS} {COMMON_EXCLUDES}',
-#        "min_count": 3,           # 最低発火件数
-#        "threshold_multiplier": 2.0, # 平均の何倍でフィーバーとするか
-#        "cooldown_minutes": 60     # 通知後のクールダウン時間（分）
-#    },
+    {
+        "id": "asahi_superdry",
+        "name": "贅沢絞り 10.28",
+        "keywords": f'(贅沢搾り) {COMMON_HITS} {COMMON_EXCLUDES}',
+        "min_count": 3,           # 最低発火件数
+        "threshold_multiplier": 2.0, # 平均の何倍でフィーバーとするか
+        "cooldown_minutes": 60     # 通知後のクールダウン時間（分）
+    },
     {
         "id": "suntory_premal",
         "name": "金麦　11.4 10.27",
